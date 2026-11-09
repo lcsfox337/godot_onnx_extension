@@ -8,7 +8,8 @@
 #include <iostream>
 
 #include "onnx_mingw_overrides.h"
-
+#include <cstdint>
+#include <cstring>
 using namespace godot;
 
 class _ModelInfoInternal{
@@ -27,7 +28,7 @@ public:
 			auto tensor_info = type_info.GetTensorTypeAndShapeInfo();
 			auto input_node_dims = tensor_info.GetShape();
 			input_shapes.push_back(input_node_dims);
-			input_infos.push_back(tensor_info);
+			
 		}
 		num_outputs = session->GetOutputCount();
 		for (size_t idx = 0; idx < num_outputs; idx++)
@@ -40,7 +41,7 @@ public:
 			auto tensor_info = type_info.GetTensorTypeAndShapeInfo();
 			auto output_node_dims = tensor_info.GetShape();
 			output_shapes.push_back(output_node_dims);
-			output_infos.push_back(tensor_info);
+			
 
 		}
 
@@ -57,8 +58,7 @@ public:
 	std::vector<Ort::AllocatedStringPtr> output_name_ptrs;
 	std::vector<char*> input_names;
 	std::vector<char*> output_names;
-	std::vector<Ort::ConstTensorTypeAndShapeInfo> input_infos;
-	std::vector<Ort::ConstTensorTypeAndShapeInfo> output_infos;
+
 	int num_outputs;
 	int num_inputs;
 	std::vector<std::vector<int64_t>> input_shapes;
@@ -208,10 +208,11 @@ Vector<PackedFloat32Array> OnnxSession::_run_internal(Vector<PackedFloat32Array>
 
 	for (size_t idx = 0; idx < num_input_nodes; idx++)
 	{
-		auto tensor_info = m_model->input_infos[idx];
-		auto input_node_dims = tensor_info.GetShape();
-		auto memory_info = Ort::MemoryInfo::CreateCpu(OrtArenaAllocator, OrtMemTypeDefault);
-		auto element_count = tensor_info.GetElementCount();
+auto type_info = m_model->session->GetInputTypeInfo(idx);
+auto tensor_info = type_info.GetTensorTypeAndShapeInfo();
+auto input_node_dims = tensor_info.GetShape();
+auto memory_info = Ort::MemoryInfo::CreateCpu(OrtArenaAllocator, OrtMemTypeDefault);
+auto element_count = tensor_info.GetElementCount();
 
 		auto &input = inputs.write[idx];
 		ERR_FAIL_COND_V_MSG(input.size() != element_count, Vector<PackedFloat32Array>(), vformat("Input has incorrect size in OnnxSession.run %d, expected %d", input.size(), element_count));

@@ -62,8 +62,10 @@ jobs:
 
       - name: (Android) Install Android SDK
         if: ${{ startsWith(matrix.identifier, 'android-') }}
-        uses: android-actions/setup-android@v3
-
+        uses: android-actions/setup-android@v4
+        with:
+          packages: 'platform-tools'
+          
       # From Godot docs, might not be necessary.
       #- name: (Android) Install Android Tools
       #  if: ${{ startsWith(matrix.identifier, 'android-') }}

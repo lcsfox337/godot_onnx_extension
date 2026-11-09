@@ -237,11 +237,37 @@ Vector<PackedFloat32Array> OnnxSession::_run_internal(Vector<PackedFloat32Array>
 		Ort::Value &out_tensor = *it;
 		auto tensorShape = out_tensor.GetTensorTypeAndShapeInfo();
 		size_t count = tensorShape.GetElementCount();
-		float *floatarr = out_tensor.GetTensorMutableData<float>();
-		PackedFloat32Array new_array;
-		new_array.resize(count);
-		memcpy(new_array.ptrw(), floatarr, sizeof(float) * count);
-		out_vals.push_back(new_array);
+
+PackedFloat32Array new_array;
+new_array.resize(count);
+
+auto element_type = tensorShape.GetElementType();
+
+if (element_type == ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT) {
+    const float *data = out_tensor.GetTensorData<float>();
+
+    memcpy(
+        new_array.ptrw(),
+        data,
+        sizeof(float) * count
+    );
+
+} else if (element_type == ONNX_TENSOR_ELEMENT_DATA_TYPE_INT64) {
+    const int64_t *data = out_tensor.GetTensorData<int64_t>();
+
+    for (size_t i = 0; i < count; i++) {
+        new_array.set(i, static_cast<float>(data[i]));
+    }
+
+} else {
+    ERR_FAIL_V_MSG(
+        Vector<PackedFloat32Array>(),
+        "Unsupported ONNX output tensor type"
+    );
+}
+
+out_vals.push_back(new_array);
+
 	}
 	return out_vals;
 }
